@@ -1,29 +1,57 @@
 import React from 'react';
 import { BrowserRouter, Switch, Route, Link, Redirect } from 'react-router-dom';
 import { Form, Field } from 'react-final-form'
+import { FORM_ERROR } from 'final-form';
 
-function validate(values: any) {
-    let errors: { name?: string, username?: string, password?: string } = {};
-    if (values.name === "Sohil") {
-        errors["name"] = "Please fill correct name";
-    }
-    if (values.username === "sohil@in2tive.ai") {
-        errors["username"] = "Please fill correct username";
-    }
-    if (values.password === "S0h!l@123") {
-        errors["password"] = "Please fill proper password";
-    }
-    return errors;
-}
 
-function onSubmit(values: any) {
-    let errors = validate(values);
-    if (errors !== {}) {
-        return Promise.reject(errors);
+export default function Signup(props: any) {
+    function validate(values: any) {
+        let errors: { name?: string, username?: string, password?: string } = {};
+        if (values.name === "") {
+            errors["name"] = "Please fill correct name";
+        }
+        if (values.username === "") {
+            errors["username"] = "Please fill correct username";
+        }
+        if (values.password === "") {
+            errors["password"] = "Please fill proper password";
+        }
+        return errors;
     }
-}
 
-export default function Signup() {
+    async function onSubmit(values: any) {
+        const { setToken } = props;
+        let errors = validate(values);
+        if (errors !== {}) {
+            Promise.reject(errors);
+        }
+        // const requestHeaders = new Headers({
+        //     Accept: "application/json",
+        // });
+        // requestHeaders.set("Content-Type", "application/json");
+        // console.log(requestHeaders);
+        const requestBody = JSON.stringify(values);
+        let requestHeaders: any = { 'Content-Type': 'application/json' };
+        const response = await fetch("http://localhost:4000/signup", {
+            method: "POST",
+            mode: 'cors', // no-cors, *cors, same-origin
+            headers: requestHeaders,
+            redirect: 'follow', // manual, *follow, error
+            referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+            body: requestBody,
+        });
+        if (response.status !== 200) {
+            return { [FORM_ERROR]: 'Signup Failed' }
+        } else {
+            if (response.body) {
+                let data = await response.json();
+                setToken(data.accessToken);
+            }
+        }
+    }
+    if (props.token !== "") {
+        return <Redirect to="/" />
+    }
     return (
         <div className="App">
             <Form onSubmit={onSubmit}
